@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: server
+spec:
+  selector:
+    matchLabels:
+      app: server
+  template:
+    metadata:
+      labels:
+        app: server
+    spec:
+      containers:
+        - name: server
+          image: server
+          ports:
+            - containerPort: 50051
+#          readinessProbe:
+#            exec:
+#              command: ["/bin/grpc_health_probe","-addr=:5050"]
+#          livenessProbe:
+#            exec:
+#              command: ["/bin/grpc_health_probe","-addr=:5050"]
+          resources:
+            requests:
+              cpu: 100m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: server
+spec:
+  type: ClusterIP
+  selector:
+    app: server
+  ports:
+  - name: grpc
+    port: 50051
+    targetPort: 50051

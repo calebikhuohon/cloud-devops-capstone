@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+import "google/protobuf/wrappers.proto";
+option go_package = ".;demo";
+
+package demo_proto;
+
+service OrderService {
+  rpc addOrder(Order) returns (google.protobuf.StringValue);
+  rpc searchOrders(google.protobuf.StringValue) returns (stream Order);
+}
+
+message Order {
+  string id = 1;
+  repeated string items = 2;
+  float price = 3;
+  string description = 4;
+  string destination = 5;
+}
