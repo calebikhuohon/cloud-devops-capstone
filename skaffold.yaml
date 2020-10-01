@@ -20,9 +20,9 @@ build:
     # must provide a "default repo" using one of the methods described
     # here:
     # https://skaffold.dev/docs/concepts/#image-repository-handling
-    - image: server
+    - image: calebikhuohon/server
       context: server
-    - image: client
+    - image: calebikhuohon/client
       context: client
   tagPolicy:
     gitCommit: {}

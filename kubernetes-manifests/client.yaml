@@ -13,7 +13,7 @@ spec:
     spec:
       containers:
         - name: client
-          image: client
+          image: calebikhuohon/client
           ports:
             - containerPort: 5051
 #          readinessProbe:

@@ -13,7 +13,7 @@ spec:
     spec:
       containers:
         - name: server
-          image: server
+          image: calebikhuohon/server
           ports:
             - containerPort: 50051
 #          readinessProbe:
