@@ -1,0 +1,193 @@
+Description: >
+  Author - Caleb Ikhuohon
+  Capstone project for the Cloud DevOps Nanodegree program
+
+Parameters:
+  EnvironmentName:
+    Description: An environment name that will be prefixed to resource names
+    Type: String
+
+  KeyPairName:
+    Description:  Name of key-pair file (PEM) for SSH login .
+    Type: String
+    Default: 'capstone-proj'
+
+Resources:
+
+  ClusterInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Path: "/"
+      Roles:
+        - !Ref ClusterRole
+
+  ClusterRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - eks.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Path: "/"
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonEKSClusterPolicy
+        - arn:aws:iam::aws:policy/AmazonEKSServicePolicy
+        - arn:aws:iam::aws:policy/ElasticLoadBalancingFullAccess
+
+  EKS:
+    Type: AWS::EKS::Cluster
+    Properties:
+      Version: "1.17"
+      RoleArn: !GetAtt ClusterRole.Arn
+      ResourcesVpcConfig:
+        SecurityGroupIds:
+          - Fn::ImportValue: !Sub "${EnvironmentName}-SCG"
+        SubnetIds:
+          Fn::Split:
+            - ","
+            - Fn::ImportValue:
+                Fn::Sub: ${EnvironmentName}-PRIV-NETS
+
+  LBSecGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow http to our load balancer
+      VpcId:
+        Fn::ImportValue:
+          !Sub "${EnvironmentName}-VPCID"
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+      SecurityGroupEgress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+
+  # Load-Balancer public side outside world
+  WebAppLB:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Subnets:
+        - Fn::ImportValue: !Sub "${EnvironmentName}-PUB1-SN"
+        - Fn::ImportValue: !Sub "${EnvironmentName}-PUB2-SN"
+      SecurityGroups:
+        - Ref: LBSecGroup
+  Listener:
+    # It references the port 8080 as an HTTP request
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn:
+            Ref: WebAppTargetGroup
+      LoadBalancerArn:
+        Ref: WebAppLB
+      Port: "80"
+      Protocol: HTTP
+
+  ALBListenerRule:
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+    Properties:
+      # Sends traffic to the target group and needs a path to listen
+      Actions:
+        - Type: forward
+          TargetGroupArn: !Ref 'WebAppTargetGroup'
+      Conditions:
+        - Field: path-pattern
+          Values: [/]
+      ListenerArn: !Ref 'Listener'
+      Priority: 1
+  WebAppTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      # Property of Auto-Scaling Group
+      # make health checks on port 80 of the various instances in the autoscaling-group
+      # Checks HTTP response on path "/" to see if everything is fine LB.
+      # Pass user request into the machine if the response is unhealthy.
+      # If the LB makes 5 tries and it doesn't get a 200 status code, it is unhealthy
+      # That happens in an interval of 10 seconds
+      # An instance is healthy if you get 2 valid responses separated by 10 seconds
+      HealthCheckIntervalSeconds: 10
+      HealthCheckPath: /
+      HealthCheckProtocol: HTTP
+      HealthCheckTimeoutSeconds: 8
+      HealthyThresholdCount: 2
+      Port: 80
+      Protocol: HTTP
+      UnhealthyThresholdCount: 5
+      VpcId:
+        Fn::ImportValue:
+          Fn::Sub: "${EnvironmentName}-VPCID"
+
+  BastionSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for bastion/jump-box
+      VpcId:
+        Fn::ImportValue:
+          !Sub "${EnvironmentName}-VPCID"
+      SecurityGroupIngress:
+        - CidrIp: 0.0.0.0/0
+          IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName} Bastion Security Group
+
+  BastionEC2Instance1:
+    Type: AWS::EC2::Instance
+    DependsOn:
+      - BastionSecurityGroup
+    Properties:
+      ImageId: ami-07b4f3c02c7f83d59
+      InstanceType: t3.small
+      KeyName: !Sub ${KeyPairName}
+      SecurityGroupIds:
+        - Ref: BastionSecurityGroup
+      SubnetId:
+        Fn::ImportValue:
+          !Sub "${EnvironmentName}-PUB1-SN"
+      AvailabilityZone: !Select [0, !GetAZs '']
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName} Bastion Host 1
+
+  BastionEC2Instance2:
+    Type: AWS::EC2::Instance
+    DependsOn:
+      - BastionSecurityGroup
+    Properties:
+      ImageId: ami-07b4f3c02c7f83d59
+      InstanceType: t3.small
+      KeyName: !Sub ${KeyPairName}
+      SecurityGroupIds:
+        - Ref: BastionSecurityGroup
+      SubnetId:
+        Fn::ImportValue:
+          !Sub "${EnvironmentName}-PUB2-SN"
+      AvailabilityZone: !Select [ 1, !GetAZs '' ]
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName} Bastion Host 2
+
+Outputs:
+  EksId:
+    Description: The EKS id.
+    Value: !Ref EKS
+    Export:
+      Name: !Sub ${EnvironmentName}-EKS
+
+  EKSRoleArn:
+    Description: The role that Amazon EKS will use to create AWS resources for Kubernetes clusters
+    Value: !GetAtt ClusterRole.Arn
+    Export:
+      Name: !Sub "${EnvironmentName}-EKSRoleArn"
