@@ -107,7 +107,7 @@ Resources:
         Fn::Split:
           - ","
           - Fn::ImportValue:
-              Fn::Sub: ${EnvironmentName}-PRIV-NETS
+              Fn::Sub: ${EnvironmentName}-PUB-NETS
       Tags:
         - Key: Name
           Value: !Sub
