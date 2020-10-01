@@ -21,9 +21,10 @@
   <component name="ChangeListManager">
     <list default="true" id="4b4907cc-3dff-42b2-ba40-96310874c0d4" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/kubernetes-manifests/client.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/kubernetes-manifests/client.yaml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/kubernetes-manifests/server.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/kubernetes-manifests/server.yaml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/skaffold.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/skaffold.yaml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/infra/eks-cluster.yml" beforeDir="false" afterPath="$PROJECT_DIR$/infra/eks-cluster.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/infra/eks-nodegroup.yml" beforeDir="false" afterPath="$PROJECT_DIR$/infra/eks-nodegroup.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/infra/network-params.json" beforeDir="false" afterPath="$PROJECT_DIR$/infra/network-params.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/infra/network.yml" beforeDir="false" afterPath="$PROJECT_DIR$/infra/network.yml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
