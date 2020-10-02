@@ -34,6 +34,7 @@ pipeline {
                   withAWS(credentials: 'aws', region: 'us-west-2') {
                         sh "aws eks --region us-west-2 update-kubeconfig --name EKS-rzaZEDOBotqR"
                         sh "kubectl config use-context arn:aws:eks:us-west-2:724775109582:cluster/EKS-rzaZEDOBotqR"
+                        sh "kubectl apply -f infra/aws-auth-cm.yaml"
                         sh "kubectl set image deployments/client client=calebikhuohon/cloud-devops-capstone-client:latest"
                         sh "kubectl set image deployments/server server=calebikhuohon/cloud-devops-capstone-server:latest"
                         sh "kubectl apply -f kubernetes-manifests/"
